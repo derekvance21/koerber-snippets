@@ -562,6 +562,20 @@
        (into {})))
 
 
+(defn write-vscode-snippets
+  [f]
+  (json/generate-stream
+   (conj (graph-snippets g)
+         dragon dragon-cow if-else tran-snippet)
+   (io/writer f)
+   {:pretty true}))
+
+
+(comment
+  (write-vscode-snippets "out/sql.json")
+  )
+
+
 (comment
   (alg/bellman-ford g {:start-node :sto
                        :end-node :orm
@@ -695,8 +709,7 @@
 (comment
 
   (let [layouts [:dot
-                 ;; :neato :fdp :sfdp :twopi :circo
-                 ]
+                 :neato :fdp :sfdp :twopi :circo]
         repository-nodes [] #_[:pob :pobd :clc :clcd :db :dbd :rsc :rscd :app]
         aad-g (apply uber/remove-nodes g repository-nodes)
         vg (reduce (fn [g node]
@@ -709,7 +722,7 @@
       (uber/viz-graph
        vg
        {:layout layout
-        :save {:filename (str "graph-" (name layout) ".png")
+        :save {:filename (str "images/" "graph-" (name layout) ".png")
                :format :png}})))
 
 
@@ -740,5 +753,3 @@
 
   (uber/find-edge g :a :c)
   )
-
-
