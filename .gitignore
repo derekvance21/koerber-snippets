@@ -1,3 +1,4 @@
+.nrepl-port
 *.png
 .calva
 .clj-kondo
