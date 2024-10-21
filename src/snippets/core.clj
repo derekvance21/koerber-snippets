@@ -2,13 +2,11 @@
   (:require
    [ubergraph.core :as uber]
    [clojure.math.combinatorics :as combo]
-   [clojure.set :as set]
    [clojure.string :as str]
    [cheshire.core :as json]
    [clojure.java.io :as io]
-   [clojure.xml :as xml]
+   [snippets.defaults :as d]
    [snippets.graph :as g]))
-
 
 
 (defn snippet
@@ -18,99 +16,8 @@
            :body body}})
 
 
-(def dragon
-  (snippet
-   "dragon"
-   "Dragon"
-   ["/*"
-    "                          / \\  //\\"
-    "            |\\___/|      /   \\//  \\\\"
-    "            /0  0  \\__  /    //  | \\ \\    "
-    "           /     /  \\/_/    //   |  \\  \\  "
-    "           @_^_@'/   \\/_   //    |   \\   \\ "
-    "           //_^_/     \\/_ //     |    \\    \\"
-    "        ( //) |        \\///      |     \\     \\"
-    "      ( / /) _|_ /   )  //       |      \\     _\\"
-    "    ( // /) '/,_ _ _/  ( ; -.    |    _ _\\.-~        .-~~~^-."
-    "  (( / / )) ,-{        _      `-.|.-~-.           .~         `."
-    " (( // / ))  '/\\      /                 ~-. _ .-~      .-~^-.  \\"
-    " (( /// ))      `.   {            }                   /      \\  \\"
-    "  (( / ))     .----~-.\\        \\-'                 .~         \\  `. \\^-."
-    "             ///.----..>        \\             _ -~             `.  ^-`  ^-_"
-    "               ///-._ _ _ _ _ _ _}^ - - - - ~                     ~-- ,.-~"
-    "                                                                  /.-~)"
-    "*/"
-    "$0"]))
-
-
-(def dragon-cow
-  (snippet
-   "dragoncow"
-   "Dragon with cow"
-   ["/*",
-    "                                ^    /^",
-    "                               / \\  // \\",
-    "                 |\\___/|      /   \\//  .\\",
-    "                 /O  O  \\__  /    //  | \\ \\           *----*",
-    "                /     /  \\/_/    //   |  \\  \\          \\   |",
-    "                @___@`    \\/_   //    |   \\   \\         \\/\\ \\",
-    "               0/0/|       \\/_ //     |    \\    \\         \\  \\",
-    "           0/0/0/0/|        \\///      |     \\     \\       |  |",
-    "        0/0/0/0/0/_|_ /   (  //       |      \\     _\\     |  /",
-    "     0/0/0/0/0/0/`/,_ _ _/  ) ; -.    |    _ _\\.-~       /   /",
-    "                 ,-}        _      *-.|.-~-.           .~    ~",
-    "\\     \\__/        `/\\      /                 ~-. _ .-~      /",
-    " \\____(oo)           *.   }            {                   /",
-    " (    (--)          .----~-.\\        \\-`                 .~",
-    " //__\\\\  \\__ Ack!   ///.----..<        \\             _ -~",
-    "//    \\\\               ///-._ _ _ _ _ _ _{^ - - - - ~",
-    "*/"
-    "$0"]))
-
-(def tran-snippet
-  (snippet
-   "btran"
-   "Transaction inside a stored procedure"
-   ["DECLARE @trancount INT = @@TRANCOUNT,",
-    "\t@savepoint NVARCHAR(32) = '$1';",
-    "BEGIN TRY",
-    "\tIF @trancount = 0",
-    "\t\tBEGIN TRANSACTION;",
-    "\tELSE",
-    "\t\tSAVE TRANSACTION @savepoint;",
-    "",
-    "\t$2;",
-    "",
-    "\tIF @trancount = 0",
-    "\t\tCOMMIT TRANSACTION;",
-    "END TRY",
-    "BEGIN CATCH",
-    "\tDECLARE @xact_state INT = XACT_STATE();",
-    "\tIF @xact_state = -1",
-    "\t\tROLLBACK TRANSACTION;",
-    "\tIF @xact_state = 1 AND @trancount = 0",
-    "\t\tROLLBACK TRANSACTION;",
-    "\tIF @xact_state = 1 AND @trancount > 0",
-    "\t\tROLLBACK TRANSACTION @savepoint;",
-    "END CATCH"
-    "$0"]))
-
-(def if-else
-  (snippet
-   "ifelse" "IF and ELSE statements"
-   ["IF ${1:condition}",
-    "BEGIN",
-    "\t${2:PRINT ''};",
-    "END"
-    "ELSE",
-    "BEGIN",
-    "\t${3:PRINT ''};",
-    "END",
-    "$0"]))
-
-
 (comment
-  (println (str/join \newline (:body (first (vals dragon)))))
+  (println (str/join \newline d/dragon))
   )
 
 
@@ -176,8 +83,6 @@
                  :type :text
                  "TYPE" :lookup_type}])
   )
-
-
 
 
 (defn edges->snippet
@@ -258,7 +163,10 @@
   [f]
   (json/generate-stream
    (conj (graph-snippets g/graph)
-         dragon dragon-cow if-else tran-snippet)
+         (snippet "dragon" "A dragon" d/dragon)
+         (snippet "dragoncow" "A dragon and a cow" d/dragon-cow)
+         (snippet "ifelse" "IF block and an ELSE block" d/if-else)
+         (snippet "btran" "Begin a transaction safely" d/transaction))
    (io/writer f)
    {:pretty true}))
 
