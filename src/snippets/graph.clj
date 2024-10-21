@@ -1,6 +1,8 @@
 (ns snippets.graph
   (:require
    [ubergraph.core :as uber]
+   [clojure.math.combinatorics :as combo]
+   [clojure.set :as set]
    [ubergraph.alg :as alg]))
 
 
@@ -387,7 +389,7 @@
         repository-nodes [] #_[:pob :pobd :clc :clcd :db :dbd :rsc :rscd :app]
         aad-g (apply uber/remove-nodes graph repository-nodes)
         vg (reduce (fn [g node]
-                     (let [{:keys [db table]} (uber/attrs g node)]
+                     (let [{:keys [_db table]} (uber/attrs g node)]
                        (uber/add-attrs
                         g node {:label (str "{" (name node) #_(when db (str "|" db)) "|" table "}")
                                 :shape :Mrecord})))
@@ -401,8 +403,8 @@
 
 
   (->> (alg/shortest-path graph {:start-node :a
-                             :traverse true
-                             :cost-attr :weight})
+                                 :traverse true
+                                 :cost-attr :weight})
        (map alg/edges-in-path))
 
   (alg/edges-in-path (alg/shortest-path graph :a :c :weight))
