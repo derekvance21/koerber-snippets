@@ -5,20 +5,9 @@
    [clojure.string :as str]
    [cheshire.core :as json]
    [clojure.java.io :as io]
+   [snippets.vscode :as v]
    [snippets.defaults :as d]
    [snippets.graph :as g]))
-
-
-(defn snippet
-  [prefix description body]
-  {prefix {:prefix prefix
-           :description description
-           :body body}})
-
-
-(comment
-  (println (str/join \newline d/dragon))
-  )
 
 
 (defn value->str
@@ -106,7 +95,7 @@
         body (concat
               (mapcat #(edge->body g %) edges)
               ["$0"])]
-    (snippet prefix description body)))
+    (v/snippet prefix description body)))
 
 
 (comment
@@ -163,10 +152,10 @@
   [f]
   (json/generate-stream
    (conj (graph-snippets g/graph)
-         (snippet "dragon" "A dragon" d/dragon)
-         (snippet "dragoncow" "A dragon and a cow" d/dragon-cow)
-         (snippet "ifelse" "IF block and an ELSE block" d/if-else)
-         (snippet "btran" "Begin a transaction safely" d/transaction))
+         (v/snippet "dragon" "A dragon" d/dragon)
+         (v/snippet "dragoncow" "A dragon and a cow" d/dragon-cow)
+         (v/snippet "ifelse" "IF block and an ELSE block" d/if-else)
+         (v/snippet "btran" "Begin a transaction safely" d/transaction))
    (io/writer f)
    {:pretty true}))
 
