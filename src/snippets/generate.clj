@@ -47,9 +47,8 @@
 
 
 (defn edge->body
-  [g [src dest join-map]]
-  (let [{:keys [db table]} (uber/attrs g dest)
-        dest (if (= src dest)
+  [src [dest {:keys [db table]}] join-map]
+  (let [dest (if (= src dest)
                (keyword (str (name dest) "2"))
                dest)]
     (concat [(str "JOIN " (table-source db table) " " (name dest) " WITH (NOLOCK)")]
@@ -60,50 +59,51 @@
 
 (comment
   (edge->body
-   g/graph [:orm :ord {:wh_id :wh_id :order :order}])
+   :orm
+   [:ord {:table "t_order_detail"}]
+   {:wh_id :wh_id
+    :order_number :order_number})
   (edge->body
-   g/graph [:hum :hum {:wh_id :wh_id :parent_hu_id :hu_id}])
+   :hum
+   [:hum {:table "t_hu_master"}]
+   {:wh_id :wh_id
+    :parent_hu_id :hu_id})
   (edge->body
-   g/graph [:loc :lkp {"t_location" :source
-                       "1033" :locale_id
-                       :type :text
-                       "TYPE" :lookup_type}]))
+   :loc
+   [:lkp {:table "t_lookup"}]
+   {"t_location" :source
+    "1033" :locale_id
+    :type :text
+    "TYPE" :lookup_type})
+  )
 
 
-(defn edges->snippet
-  [g n edges]
-  (let [path-snippet? (some #(not= n (uber/src %)) edges)
-        prefix (str (name n)
-                    (str/join (map
-                               (fn [[src dest _]]
-                                 (if (= src n) #_path-snippet?
-                                     (name dest)
-                                     (str "-" (name dest))))
-                               edges)))
-        description (str "Join an existing " (name n) " table to "
-                         (->> edges
-                              (map
-                               (fn [[src dest _]]
-                                 (if (= src n)
-                                   (name dest)
-                                   (str (name src) " to " (name dest)))))
-                              (str/join ", ")))
-        body (concat
-              (mapcat #(edge->body g %) edges)
-              ["$0"])]
+(defn edges->description
+  [start edges]
+  (str "Join an existing " (name start) " table to "
+       (str/join
+        ", "
+        (eduction
+         (map
+          (fn [[src [dest _] _]]
+            (if (= src start)
+              (name dest)
+              (str (name src) " to " (name dest)))))
+         edges))))
+
+
+(defn path-snippet
+  [{:keys [start end edges]}]
+  (let [prefix (str (name start) (name end))
+        description (edges->description start edges)
+        body (conj (into [] (mapcat #(apply edge->body %)) edges) "$0")]
     (->Snippet prefix description body)))
 
 
-(comment
-  (edges->snippet g/graph :orm [[:orm :wkq {:wh_id :wh_id, :order_number :pick_ref_number}]
-                                [:orm :car {:carrier_id :carrier_id}]
-                                [:orm :ldm {:wh_id :wh_id, :load_id :load_id}]])
-
-  (edges->snippet g/graph :pod [[:pod :itm {:wh_id :wh_id, :order_number :pick_ref_number}]
-                                [:itm :itu {:carrier_id :carrier_id}]]))
-
-
-(comment
-  (->> (g/table-paths g/graph :pkd)
-       (take 10)
-       (map #(edges->snippet g/graph :pkd %))))
+(defn node-snippet
+  [[node {:keys [db table]}]]
+  (let [alias (name node)]
+    {:prefix alias
+     :description (str "Table " table " with alias: " alias)
+     :body [(str "FROM " (table-source db table) " " alias " WITH (NOLOCK)")
+            "$0"]}))

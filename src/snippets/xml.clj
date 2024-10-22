@@ -60,7 +60,7 @@
                         {:tag :SnippetTypes
                          :content [{:tag :SnippetType
                                     :content ["Expansion"]}]}]}
-             (snippet body)]})
+             (snippet (str/join \newline body))]})
 
 
 (comment

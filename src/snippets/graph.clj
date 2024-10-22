@@ -189,6 +189,7 @@
    ;; wqa
    [:wqa :wkq {:wh_id :wh_id
                :work_q_id :work_q_id}]
+   [:wqa :emp {:user_assigned :id}]
    ;; car
    ;; alo
    [:alo :pkd {:pick_id :pick_id}]
@@ -225,6 +226,7 @@
    ;; pkc
    [:pkc :hum {:wh_id :wh_id
                :container_label :hu_id}]
+   [:pkc :emp {:user_assigned :id}]
    ;; znl
    [:znl :loc {:wh_id :wh_id
                :location_id :location_id}]
@@ -251,7 +253,6 @@
   (apply uber/digraph (into nodes edges)))
 
 
-
 (defn all-paths
   ([g node]
    (all-paths g node []))
@@ -270,8 +271,84 @@
        []
        [path]))))
 
+
+(defn edge-description
+  [g e]
+  (let [[src dest attrs] (uber/edge-with-attrs g e)]
+    [src (uber/node-with-attrs g dest) attrs]))
+
+
+(defn path-description
+  [g path]
+  {:start (alg/start-of-path path)
+   :end (alg/end-of-path path)
+   :edges (mapv #(edge-description g %) (alg/edges-in-path path))})
+
+
+(defn shortest-paths
+  [g node]
+  (let [;; shortest-path won't find self edges, so check for it manually
+        self (uber/edge-description->edge g [node node])
+        ps (alg/shortest-path
+            g
+            {:start-node node
+             :traverse true
+             :min-cost 1})]
+    (into (if self
+            [{:start node
+              :end node
+              :edges [(edge-description g self)]}]
+            [])
+          (map #(path-description g %))
+          ps)))
+
+
 (comment
-  (all-paths graph :pkd))
+  (shortest-paths graph :sto)
+  (shortest-paths graph :wkq)
+  (remove #(some (comp #{:wkq} first) (:edges %)) (shortest-paths graph :wqa))
+  )
+
+
+(def paths
+  (sequence
+   (mapcat #(shortest-paths graph %))
+   (uber/nodes graph)))
+
+
+(def node-descriptions
+  (sequence
+   (map #(uber/node-with-attrs graph %))
+   (uber/nodes graph)))
+
+
+(defn viz-graph
+  ([]
+   (viz-graph [:dot
+               :neato :fdp :sfdp :twopi :circo]))
+  ([layouts]
+   (let [repository-nodes [] #_[:pob :pobd :clc :clcd :db :dbd :rsc :rscd :app]
+         g (apply uber/remove-nodes graph repository-nodes)
+         vg (reduce (fn [g node]
+                      (let [{:keys [_db table]} (uber/attrs g node)]
+                        (uber/add-attrs
+                         g node {:label (str "{" (name node) #_(when db (str "|" db)) "|" table "}")
+                                 :shape :Mrecord})))
+                    g (uber/nodes g))]
+     (doseq [layout layouts]
+       (uber/viz-graph
+        vg
+        {:layout layout
+         :save {:filename (str "images/" "graph-" (name layout) ".png")
+                :format :png}})))))
+
+
+(comment
+  (viz-graph)
+  )
+
+
+;; ALL THIS BELOW DOWN HERE PROBABLY SUCKS
 
 
 (defn paths-within
@@ -284,7 +361,12 @@
   (->> (all-paths g node)
        (mapcat paths-within)
        (filter #(> (count %) 1))
-       (distinct)))
+       (distinct)
+       ))
+
+(comment
+  (table-paths graph :sto)
+  )
 
 
 (defn invert-edge
@@ -315,27 +397,27 @@
 
 (comment
   (alg/bellman-ford graph {:start-node :sto
-                       :end-node :orm
-                       :cost-fn (constantly 1)})
+                           :end-node :orm
+                           :cost-fn (constantly 1)})
 
   (alg/bellman-ford graph {:start-node :sto
-                       :cost-fn (constantly 1)
-                       :traverse false})
+                           :cost-fn (constantly 1)
+                           :traverse false})
 
   (->> (alg/bf-traverse graph :sto)
        (map #(alg/shortest-path graph :sto %)))
 
   (alg/shortest-path graph {:start-node :sto
-                        :traverse true
-                        :min-cost 1})
+                            :traverse true
+                            :min-cost 1})
 
   (->> (alg/shortest-path graph {:start-node :sto
-                             :traverse true})
+                                 :traverse true})
        (map alg/edges-in-path)
        (map #(mapv (juxt uber/src uber/dest) %)))
 
   (->> (alg/shortest-path graph {:start-node :sto
-                             :traverse true})
+                                 :traverse true})
        (mapv alg/nodes-in-path))
 
   (alg/topsort graph :sto)
@@ -371,8 +453,8 @@
 
 
   (uber/viz-graph graph {:auto-label false
-                     :save {:filename "graph.png"
-                            :format :png}})
+                         :save {:filename "graph.png"
+                                :format :png}})
 
 
   (->> (uber/nodes graph)
@@ -383,24 +465,6 @@
 
 
 (comment
-
-  (let [layouts [:dot
-                 :neato :fdp :sfdp :twopi :circo]
-        repository-nodes [] #_[:pob :pobd :clc :clcd :db :dbd :rsc :rscd :app]
-        aad-g (apply uber/remove-nodes graph repository-nodes)
-        vg (reduce (fn [g node]
-                     (let [{:keys [_db table]} (uber/attrs g node)]
-                       (uber/add-attrs
-                        g node {:label (str "{" (name node) #_(when db (str "|" db)) "|" table "}")
-                                :shape :Mrecord})))
-                   aad-g (uber/nodes aad-g))]
-    (doseq [layout layouts]
-      (uber/viz-graph
-       vg
-       {:layout layout
-        :save {:filename (str "images/" "graph-" (name layout) ".png")
-               :format :png}})))
-
 
   (->> (alg/shortest-path graph {:start-node :a
                                  :traverse true

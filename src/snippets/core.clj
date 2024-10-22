@@ -11,58 +11,52 @@
    [snippets.generate :as gen]))
 
 
-;; TODO - probably should be snippet for generating the FROM, as well as the JOINs, in one snippet
-;; *stopkd ->
-;; FROM t_stored_item sto WITH (NOLOCK)
-;; JOIN t_pick_detail pkd WITH (NOLOCK)
-;;     ON sto.type = pkd.pick_id
-(defn table-snippets
-  [g node]
-  (let [{:keys [db table]} (uber/attrs g node)
-        paths (g/table-paths g node)]
-    (->> (g/table-edges g node)
-         (remove empty?)
-         (filter #(<= (count %) 2 #_3 #_4))
-         (mapcat combo/permutations)
-         (concat paths)
-         (map #(gen/edges->snippet g node %))
-         (into {(name node) {:prefix (name node)
-                             :description (str "Table " table " with alias: " (name node))
-                             :body [(str "FROM " (gen/table-source db table) " " (name node) " WITH (NOLOCK)")
-                                    "$0"]}}))))
-
-(comment
-  (-> (uber/out-edges g/graph :orm)
-      (combo/subsets)
-      (combo/cartesian-product (uber/in-edges g/graph :orm)))
-  )
+(def path-snippets
+  (eduction (map gen/path-snippet) g/paths))
 
 
-(defn graph-snippets
-  [g]
-  (->> (uber/nodes g)
-       (map #(table-snippets g %))
-       (into {})))
+(def node-snippets
+  (eduction (map gen/node-snippet) g/node-descriptions))
 
 
-(comment
-  (->> (graph-snippets g/graph)
-       (take-last 2))
-  )
+;; (defn table-snippets
+;;   [g node]
+;;   (let [{:keys [db table]} (uber/attrs g node)
+;;         paths (g/table-paths g node)]
+;;     (->> (g/table-edges g node)
+;;          (remove empty?)
+;;          (filter #(<= (count %) 2 #_3 #_4))
+;;          (mapcat combo/permutations)
+;;          (concat paths)
+;;          (map #(gen/edges->snippet g node %))
+;;          (into {(name node) }))))
+
+
+(def default-snippets
+  [(gen/->Snippet "dragon" "A dragon" d/dragon)
+   (gen/->Snippet "dragoncow" "A dragon and a cow" d/dragon-cow)
+   (gen/->Snippet "ifelse" "IF block and an ELSE block" d/if-else)
+   (gen/->Snippet "btran" "Begin a transaction safely" d/transaction)])
 
 
 (def snippets
-  (conj (graph-snippets g/graph)
-        (v/snippet "dragon" "A dragon" d/dragon)
-        (v/snippet "dragoncow" "A dragon and a cow" d/dragon-cow)
-        (v/snippet "ifelse" "IF block and an ELSE block" d/if-else)
-        (v/snippet "btran" "Begin a transaction safely" d/transaction)))
+  (into
+   []
+   cat
+   [node-snippets
+    path-snippets
+    default-snippets]))
 
+
+(comment
+  (get (into {} (map (juxt :prefix identity)) snippets)
+       "stohum")
+  )
 
 (defn write-vscode-snippets
   [f]
   (json/generate-stream
-   snippets
+   (into {} (map (juxt :prefix identity)) snippets)
    (io/writer f)
    {:pretty true}))
 
