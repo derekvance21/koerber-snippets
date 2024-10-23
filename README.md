@@ -44,9 +44,9 @@ JOIN t_stored_item sto WITH (NOLOCK)
 	ON loc.wh_id = sto.wh_id
 	AND loc.location_id = sto.location_id
 ```
-Because the shortest path from `zon` to `sto` is through `znl`, and `loc`.
+Because *a* shortest path from `zon` to `sto` is through `znl`, and `loc`.
 
-You have to be careful, though, because there are multiple shortest paths from a source to a set of destinations. For example, say you wanted to find all the `sto` on each employee's fork. So you could try `stoemp`, but you'd get:
+You have to be careful, though, because there can be multiple shortest paths from a source to a set of destinations. For example, say you wanted to find all the `sto` on each employee's fork. So you could try `stoemp`, but you'd get:
 ```sql
 JOIN t_pick_detail pkd WITH (NOLOCK)
 	ON sto.type = pkd.pick_id
