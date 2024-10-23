@@ -258,7 +258,7 @@
 
 
 ;; TODO - rename to schema or aad-schema or something
-(def graph
+(def aad-schema
   (let [inits (into aad-nodes (map edge->init) aad-edges)]
     (apply uber/graph inits)))
 
@@ -304,30 +304,30 @@
 
 
 (comment
-  (shortest-paths-to-destinations graph :zon [:loc :alo])
-  (edges-to-destinations graph :zon [:alo])
-  (edges-to-destinations graph :zon [:loc :alo :sto :pkd :itm :ppm])
-  (edges-to-destinations graph :zon [:loc :alo :ppm])
-  (edges-to-destinations graph :ppm [:hld])
-  (edges-to-destinations graph :sto [:emp])
-  (edges-to-destinations graph :sto [:loc :emp])
-  (edges-to-destinations graph :pkd [:emp :loc :ppm])
-  (edges-to-destinations graph :pkd [:loc :ord :orm])
-  (edges-to-destinations graph :sto [:orm :loc :emp])
-  (edges-to-destinations graph :sto [:pkd :hum])
-  (edges-to-destinations graph :alo [:orm :emp])
-  (edges-to-destinations graph :alo [:orm :emp])
+  (shortest-paths-to-destinations aad-schema :zon [:loc :alo])
+  (edges-to-destinations aad-schema :zon [:alo])
+  (edges-to-destinations aad-schema :zon [:loc :alo :sto :pkd :itm :ppm])
+  (edges-to-destinations aad-schema :zon [:loc :alo :ppm])
+  (edges-to-destinations aad-schema :ppm [:hld])
+  (edges-to-destinations aad-schema :sto [:emp])
+  (edges-to-destinations aad-schema :sto [:loc :emp])
+  (edges-to-destinations aad-schema :pkd [:emp :loc :ppm])
+  (edges-to-destinations aad-schema :pkd [:loc :ord :orm])
+  (edges-to-destinations aad-schema :sto [:orm :loc :emp])
+  (edges-to-destinations aad-schema :sto [:pkd :hum])
+  (edges-to-destinations aad-schema :alo [:orm :emp])
+  (edges-to-destinations aad-schema :alo [:orm :emp])
 )
 
 
 (def schema-nodes
-  (uber/nodes graph))
+  (uber/nodes aad-schema))
 
 
 (def node-descriptions
   (sequence
-   (map #(uber/node-with-attrs graph %))
-   (uber/nodes graph)))
+   (map #(uber/node-with-attrs aad-schema %))
+   (uber/nodes aad-schema)))
 
 
 (defn viz-graph
@@ -335,7 +335,7 @@
    (viz-graph [:dot :neato :fdp :sfdp :twopi :circo]))
   ([layouts]
    (let [repository-nodes [] #_[:pob :pobd :clc :clcd :db :dbd :rsc :rscd :app]
-         g (apply uber/remove-nodes graph repository-nodes)
+         g (apply uber/remove-nodes aad-schema repository-nodes)
          vg (reduce (fn [g node]
                       (let [{:keys [_db table]} (uber/attrs g node)]
                         (uber/add-attrs
