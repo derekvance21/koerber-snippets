@@ -6,7 +6,7 @@ This is a project to generate useful SQL snippets for Koerber development, speci
 
 Here is a graph of a subset of the AAD schema. Each node is a table, and each relationship between two tables is an edge. Each node has a unique default alias. Each edge has a join attribute describing how one table joins to the other table's primary key.
 
-![AAD Schema as a graph](images/graph-dot.png)
+![AAD Schema as a graph](schema.png)
 
 ## Snippets
 
