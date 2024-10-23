@@ -1,5 +1,5 @@
 .nrepl-port
-*.png
+images/*.png
 .calva
 .clj-kondo
 .cpcache
