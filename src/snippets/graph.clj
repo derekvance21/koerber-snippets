@@ -280,14 +280,12 @@
   ([g node dests max-jumps]
    (let [dest-set (set dests)
          cost-fn (fn [e] (if (contains? dest-set (uber/dest e)) 0 1))
-         paths (alg/shortest-path g {:start-node node
-                                     :cost-fn cost-fn})]
-     (into
-      []
-      (comp
-       (map #(alg/path-to paths %))
-       (remove #(> (:cost %) max-jumps)))
-      dests))))
+         ps (alg/shortest-path g {:start-node node
+                                  :cost-fn cost-fn})
+         paths (into [] (map #(alg/path-to ps %)) dests)]
+     ;; all the paths to each dest in dests need to be under the max-jumps
+     (when (every? #(<= (:cost %) max-jumps) paths)
+       paths))))
 
 
 (defn edges-to-destinations
@@ -305,6 +303,8 @@
 
 (comment
   (shortest-paths-to-destinations aad-schema :zon [:loc :alo])
+  (shortest-paths-to-destinations aad-schema :hld [:sto :car])
+  (shortest-paths-to-destinations aad-schema :hld [:sto :itm])
   (edges-to-destinations aad-schema :zon [:alo])
   (edges-to-destinations aad-schema :zon [:loc :alo :sto :pkd :itm :ppm])
   (edges-to-destinations aad-schema :zon [:loc :alo :ppm])
