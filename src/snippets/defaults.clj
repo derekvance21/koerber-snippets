@@ -1,6 +1,9 @@
 (ns snippets.defaults)
 
 
+(def max-join-length 3)
+
+
 (def dragon
   ["/*"
    "                          / \\  //\\"

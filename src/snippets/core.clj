@@ -1,35 +1,28 @@
 (ns snippets.core
   (:require
-   [ubergraph.core :as uber]
-   [clojure.math.combinatorics :as combo]
+   [snippets.combo :as c]
    [cheshire.core :as json]
    [clojure.java.io :as io]
    [snippets.xml :as x]
-   [snippets.vscode :as v]
    [snippets.defaults :as d]
    [snippets.graph :as g]
-   [snippets.generate :as gen]))
+   [snippets.generate :as gen])
+  (:gen-class))
 
 
-(def path-snippets
-  (eduction (map gen/path-snippet) g/paths))
+(defn join-from-subset
+  [[start & dests]]
+  (let [edges (g/edges-to-destinations g/graph start dests)]
+    (when-not (empty? edges)
+      {:start start
+       :dests dests
+       :edges edges})))
 
 
-(def node-snippets
-  (eduction (map gen/node-snippet) g/node-descriptions))
-
-
-;; (defn table-snippets
-;;   [g node]
-;;   (let [{:keys [db table]} (uber/attrs g node)
-;;         paths (g/table-paths g node)]
-;;     (->> (g/table-edges g node)
-;;          (remove empty?)
-;;          (filter #(<= (count %) 2 #_3 #_4))
-;;          (mapcat combo/permutations)
-;;          (concat paths)
-;;          (map #(gen/edges->snippet g node %))
-;;          (into {(name node) }))))
+(def joins
+  (sequence
+   (comp (map join-from-subset) (remove empty?))
+   (c/permuted-subsets g/schema-nodes 2 d/max-join-length)))
 
 
 (def default-snippets
@@ -43,14 +36,16 @@
   (into
    []
    cat
-   [node-snippets
-    path-snippets
+   [(eduction (map gen/node-snippet) g/node-descriptions)
+    (eduction (map gen/join-snippet) joins)
     default-snippets]))
 
 
 (comment
   (get (into {} (map (juxt :prefix identity)) snippets)
        "stohum")
+  (get (into {} (map (juxt :prefix identity)) snippets)
+       "stolocemp")
   )
 
 (defn write-vscode-snippets
@@ -68,9 +63,14 @@
       (x/emit-code-snippets snippets))))
 
 
-(comment
+(defn -main
+  [& _]
   (write-vscode-snippets "out/sql.json")
-  (write-xml-snippets "out/snippets.snippet")
+  (write-xml-snippets "out/snippets.snippet"))
+
+
+(comment
+  (-main)
   )
 
 

@@ -92,9 +92,14 @@
          edges))))
 
 
-(defn path-snippet
-  [{:keys [start end edges]}]
-  (let [prefix (str (name start) (name end))
+(defn join-prefix
+  [start dests]
+  (str/join (eduction (map name) (into [start] dests))))
+
+
+(defn join-snippet
+  [{:keys [start dests edges]}]
+  (let [prefix (join-prefix start dests)
         description (edges->description start edges)
         body (conj (into [] (mapcat #(apply edge->body %)) edges) "$0")]
     (->Snippet prefix description body)))
