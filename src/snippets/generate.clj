@@ -1,8 +1,6 @@
 (ns snippets.generate
   (:require
-   [clojure.string :as str]
-   [snippets.graph :as g]
-   [ubergraph.core :as uber]))
+   [clojure.string :as str]))
 
 
 (defrecord Snippet [prefix description body])

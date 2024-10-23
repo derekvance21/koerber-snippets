@@ -2,11 +2,32 @@
 
 This is a project to generate useful SQL snippets for Koerber development, specifically for AAD database.
 
+## Install
+
+Go to the [release page](https://github.com/derekvance21/koerber-snippets/releases) and download the appropriate file for your IDE (SSMS or VSCode/Azure Data Studio).
+
+### VSCode/Azure Data Studio [docs](https://code.visualstudio.com/docs/editor/userdefinedsnippets#_create-your-own-snippets)
+
+1. Open the Command Palette with `Ctrl+Shift+P` and search for and select `Snippets: Configure Snippets`, then `MS SQL`
+2. Copy the downloaded `sql.json` file and paste it into this opened buffer.
+3. Alternatively, move the downloaded `sql.json` file to `%APPDATA%\Code\User\snippets` for VSCode or `%APPDATA%\azuredatastudio\User\snippets` for Azure Data Studio.
+4. Open a new buffer, change the language to SQL, type `stopkd`, then hit `Enter` to test snippet expansion.
+
+### SSMS [docs](https://learn.microsoft.com/en-us/sql/ssms/scripting/add-transact-sql-snippets?view=sql-server-ver16)
+
+1. Open the Code Snippets Manager with `Ctrl+K, Ctrl+B` or clicking `Tools > Code Snippets Manager`.
+2. Click `Add` and add a folder where you're going to be the downloaded `.snippet` file. I would name it something that would show up first in an alphabetical list (like `AAD` or `.Koerber`), because of the way snippets work in SSMS.
+3. Click `Import`, and select the downloaded `.snippet` file. 
+4. Select the folder you created and click `Finish` (this may take a few moments) and then `OK`.
+5. To open snippets, use the shortcut `Ctrl+K,  Ctrl+X`. Select (by pressing `Enter`) the folder you added (it should be first in the list so you don't have to search for it!), type `sto`, then hit `Enter`. The `stopkd` `FROM` snippet expansion should work correctly.
+
 ## Background
 
-Here is a graph of a subset of the AAD schema. Each node is a table, and each relationship between two tables is an edge. Each node has a unique default alias. Each edge has a join attribute describing how one table joins to the other table's primary key.
+Here is a graph of a subset of the AAD schema that these snippets use. Each node is a table, and each relationship between two tables is an edge. Each node has a unique default alias. Each edge has a join attribute describing how one table joins to the other table's primary key.
 
 ![AAD Schema as a graph](schema.png)
+
+Using some graph algorithms, the shortest paths from a source node to a set of destination nodes can be found.
 
 ## Snippets
 
@@ -14,7 +35,7 @@ SSMS and Azure Data Studio (also VSCode) support custom snippets.
 
 ### FROM Snippet
 
-Each table in the schema can expand a table alias to a `FROM` line with `WITH (NOLOCK)`. So `sto` expands to:
+Each table in the schema can expand a table alias to a `FROM` line with the table name and `WITH (NOLOCK)`. So `sto` expands to:
 ```sql
 FROM t_stored_item sto WITH (NOLOCK)
 ```
@@ -30,7 +51,7 @@ JOIN t_location loc WITH (NOLOCK)
 	ON sto.wh_id = loc.wh_id
 	AND sto.location_id = loc.location_id
 ```
-Because these two edges, from `sto` to `hum` and from `sto` to `loc` is the shortest set of paths starting at `sto` that visits both `hum` and `loc`.
+Because the two edges from `sto` to `hum` and from `sto` to `loc` is *a* shortest set of paths starting at `sto` that visits both `hum` and `loc`.
 
 Typing `zonsto` would expand to:
 ```sql
@@ -61,3 +82,12 @@ JOIN t_location loc WITH (NOLOCK)
 JOIN t_employee emp WITH (NOLOCK)
 	ON loc.c1 = emp.id
 ```
+Because now a shortest set of paths from `sto` to `loc` and `emp` is through those two tables.
+
+### Others
+
+The snippet `btran` starts a transaction *that is potentially inside another transaction with proper error handling*. A lot of base code does not do this properly.
+
+The snippet `ifelse` expands to `IF`/`ELSE` blocks.
+
+Then there are two easter egg snippets, `dragon` and `dragoncow`.

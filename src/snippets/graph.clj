@@ -276,7 +276,10 @@
 
 (defn shortest-paths-to-destinations
   ([g node dests]
-   (shortest-paths-to-destinations g node dests (- d/max-join-length (count dests)))) ;; TODO - you might want to even decrement max-jumps here. Some of these joins are kind of crazy
+   ;; TODO - you might want to even decrement max-jumps here. Some of these joins are kind of crazy.
+   ;; if you decrement, then no jumps would be allowed
+   ;; or you could just change the <= in the every? form to <
+   (shortest-paths-to-destinations g node dests (- d/max-join-length (count dests))))
   ([g node dests max-jumps]
    (let [dest-set (set dests)
          cost-fn (fn [e] (if (contains? dest-set (uber/dest e)) 0 1))
