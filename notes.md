@@ -55,3 +55,10 @@ IMPORTANT - it doesn't have to be just PK, though, it could be UNIQUE INDEX!
 ex: ord's PK is order_detail_id (but who uses that??), whereas its UNIQUE INDEX is (wh_id, order_number, line_number)
 
 `sudo apt install graphviz`
+
+# Steiner Trees
+
+> One well-known variant, which is often used synonymously with the term Steiner tree problem, is the Steiner tree problem in graphs. Given an undirected graph with non-negative edge weights and a subset of vertices, usually referred to as terminals, the Steiner tree problem in graphs requires a tree of minimum weight that contains all terminals (but may include additional vertices) and minimizes the total weight of its edges.
+- <a href="https://en.wikipedia.org/wiki/Steiner_tree_problem"><cite>Steiner tree problem</cite></a>
+
+[Solutions to Steiner Tree](https://www.cs.ucr.edu/~michalis/COURSES/240-08/steiner.html)

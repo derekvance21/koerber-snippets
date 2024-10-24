@@ -51,7 +51,7 @@
                dest)]
     (concat [(str "JOIN " (table-source db table) " " (name dest) " WITH (NOLOCK)")]
             (map str
-                 (conj (repeat "\tAND ") "\tON ")
+                 (cons "\tON " (repeat "\tAND "))
                  (map #(clause->str src dest %) join-map)))))
 
 

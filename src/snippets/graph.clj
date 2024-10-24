@@ -83,6 +83,7 @@
    [:eil {:table "t_emp_input_log"}] ;; FK to rules and master
    ])
 
+;; lkp should be a directed edge
 (def aad-edges
   [;; ppm
    ;; ppr
@@ -238,16 +239,16 @@
    ;; TODO I want to make all these have greater than 1 weight!
    ;; This shouldn't be winning in a tie!
    [:trl :itm {:wh_id :wh_id
-               :item_number :item_number}]
+               :item_number :item_number} {:weight 1.1}]
    [:trl :hum {:wh_id :wh_id
-               [:source_hu_id :destination_hu_id] :hu_id}]
+               [:source_hu_id :destination_hu_id] :hu_id} {:weight 1.1}]
    [:trl :loc {:wh_id :wh_id
-               [:source_location_id :destination_location_id] :location_id}]
+               [:source_location_id :destination_location_id] :location_id} {:weight 1.1}]
    [:trl :wkq {:wh_id :wh_id
-               :work_q_id :work_q_id}]
-   [:trl :trn {:tran_type :tran_type}]
+               :work_q_id :work_q_id} {:weight 1.1}]
+   [:trl :trn {:tran_type :tran_type} {:weight 1.1}]
    [:trl :orm {:wh_id :wh_id
-               :outbound_order_number :order_number}]
+               :outbound_order_number :order_number} {:weight 1.1}]
    ;; eil
    [:eil :emp {:id :id}]
    [:eil :loc {:wh_id :wh_id
@@ -256,7 +257,7 @@
 
 (defn edge->init
   [[src dest join attrs]]
-  [src dest (merge attrs {:join join})])
+  [src dest (merge {:weight 1} attrs {:join join})])
 
 
 ;; TODO - rename to schema or aad-schema or something
@@ -284,16 +285,26 @@
    (shortest-paths-to-destinations g node dests (- d/max-join-length (count dests))))
   ([g node dests max-jumps]
    (let [dest-set (set dests)
-         cost-fn (fn [e] (if (contains? dest-set (uber/dest e)) 0 1))
+         cost-fn (fn [e] (if (contains? dest-set (uber/dest e))
+                           0
+                           (uber/attr g e :weight)))
          edge-filter (fn [e]
                        ;; lkp can't be in the middle of a path
-                       (or (= node :lkp)
-                           (not= :lkp (uber/src e))))
+                       (let [src (uber/src e)
+                             dest (uber/dest e)]
+                         (and
+                          (or (= node :lkp)
+                              (not= :lkp src))
+                          (or (= node :trl)
+                              (not= :trl src)
+                              (= :trn dest)))))
          ps (alg/shortest-path g {:start-node node
                                   :cost-fn cost-fn
                                   :edge-filter edge-filter})
          paths (into [] (map #(alg/path-to ps %)) dests)]
      ;; all the paths to each dest in dests need to be under the max-jumps
+     ;; TODO maybe also the sum of the path costs needs to be under max-jumps?
+     ;; but really that's something I need to communicate with the shortest-path calculation...
      (when (every? #(<= (:cost %) max-jumps) paths)
        paths))))
 
@@ -314,6 +325,9 @@
 (comment
   (shortest-paths-to-destinations aad-schema :sto [:loc :orm])
   (edges-to-destinations aad-schema :sto [:loc :orm])
+  
+  (edges-to-destinations aad-schema :hum [:pkd :wkq])
+  (shortest-paths-to-destinations aad-schema :hum [:pkd :wkq])
   (shortest-paths-to-destinations aad-schema :zon [:loc :alo])
   (shortest-paths-to-destinations aad-schema :hld [:sto :car])
   (shortest-paths-to-destinations aad-schema :hld [:sto :itm])
