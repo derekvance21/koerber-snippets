@@ -246,6 +246,8 @@
    [:trl :wkq {:wh_id :wh_id
                :work_q_id :work_q_id}]
    [:trl :trn {:tran_type :tran_type}]
+   [:trl :orm {:wh_id :wh_id
+               :outbound_order_number :order_number}]
    ;; eil
    [:eil :emp {:id :id}]
    [:eil :loc {:wh_id :wh_id
@@ -283,8 +285,13 @@
   ([g node dests max-jumps]
    (let [dest-set (set dests)
          cost-fn (fn [e] (if (contains? dest-set (uber/dest e)) 0 1))
+         edge-filter (fn [e]
+                       ;; lkp can't be in the middle of a path
+                       (or (= node :lkp)
+                           (not= :lkp (uber/src e))))
          ps (alg/shortest-path g {:start-node node
-                                  :cost-fn cost-fn})
+                                  :cost-fn cost-fn
+                                  :edge-filter edge-filter})
          paths (into [] (map #(alg/path-to ps %)) dests)]
      ;; all the paths to each dest in dests need to be under the max-jumps
      (when (every? #(<= (:cost %) max-jumps) paths)
@@ -305,6 +312,8 @@
 
 
 (comment
+  (shortest-paths-to-destinations aad-schema :sto [:loc :orm])
+  (edges-to-destinations aad-schema :sto [:loc :orm])
   (shortest-paths-to-destinations aad-schema :zon [:loc :alo])
   (shortest-paths-to-destinations aad-schema :hld [:sto :car])
   (shortest-paths-to-destinations aad-schema :hld [:sto :itm])
