@@ -8,14 +8,18 @@ This is a project to generate useful SQL snippets for Koerber development, speci
 
 Go to the [release page](https://github.com/derekvance21/koerber-snippets/releases) and download the appropriate file for your IDE (SSMS or VSCode/Azure Data Studio).
 
-### VSCode/Azure Data Studio [docs](https://code.visualstudio.com/docs/editor/userdefinedsnippets#_create-your-own-snippets)
+### VSCode/Azure Data Studio
+
+[docs](https://code.visualstudio.com/docs/editor/userdefinedsnippets#_create-your-own-snippets)
 
 1. Open the Command Palette with `Ctrl+Shift+P` and search for and select `Snippets: Configure Snippets`, then `MS SQL`
 2. Copy the downloaded `sql.json` file and paste it into this opened buffer.
 3. Alternatively, move the downloaded `sql.json` file to `%APPDATA%\Code\User\snippets` for VSCode or `%APPDATA%\azuredatastudio\User\snippets` for Azure Data Studio.
 4. Open a new buffer, change the language to SQL, type `stopkd`, then hit `Enter` to test snippet expansion.
 
-### SSMS [docs](https://learn.microsoft.com/en-us/sql/ssms/scripting/add-transact-sql-snippets?view=sql-server-ver16)
+### SSMS
+
+[docs](https://learn.microsoft.com/en-us/sql/ssms/scripting/add-transact-sql-snippets?view=sql-server-ver16)
 
 1. Open the Code Snippets Manager with `Ctrl+K, Ctrl+B` or clicking `Tools > Code Snippets Manager`.
 2. Click `Add` and add a folder where you're going to be the downloaded `.snippet` file. I would name it something that would show up first in an alphabetical list (like `AAD` or `.Koerber`), because of the way snippets work in SSMS.
@@ -88,8 +92,15 @@ Because now a shortest set of paths from `sto` to `loc` and `emp` is through tho
 
 ### Others
 
-The snippet `btran` starts a transaction *that is potentially inside another transaction with proper error handling*. A lot of base code does not do this properly.
+The snippet `btran` begins a transaction *that is potentially inside another transaction with proper error handling*. A lot of base code does not do this properly.
 
 The snippet `ifelse` expands to `IF`/`ELSE` blocks.
 
 Then there are two easter egg snippets, `dragon` and `dragoncow`.
+
+## Build
+
+The following generates two snippet files in the `out/` folder: `sql.json` (for VSCode/Azure Data Studio) and `snippets.snippet` (for SSMS).
+```sh
+mkdir -p out; clj -M -m snippets.core
+```
