@@ -13,7 +13,7 @@ Go to the [release page](https://github.com/derekvance21/koerber-snippets/releas
 [docs](https://code.visualstudio.com/docs/editor/userdefinedsnippets#_create-your-own-snippets)
 
 1. Open the Command Palette with `Ctrl+Shift+P` and search for and select `Snippets: Configure Snippets`, then `MS SQL`
-2. Copy the downloaded `sql.json` file and paste it into this opened buffer.
+2. Copy the downloaded `sql.json` file and paste it into this opened buffer and save.
 3. Alternatively, move the downloaded `sql.json` file to `%APPDATA%\Code\User\snippets` for VSCode or `%APPDATA%\azuredatastudio\User\snippets` for Azure Data Studio.
 4. Open a new buffer, change the language to SQL, type `stopkd`, then hit `Enter` to test snippet expansion.
 
@@ -22,10 +22,10 @@ Go to the [release page](https://github.com/derekvance21/koerber-snippets/releas
 [docs](https://learn.microsoft.com/en-us/sql/ssms/scripting/add-transact-sql-snippets?view=sql-server-ver16)
 
 1. Open the Code Snippets Manager with `Ctrl+K, Ctrl+B` or clicking `Tools > Code Snippets Manager`.
-2. Click `Add` and add a folder where you're going to be the downloaded `.snippet` file. I would name it something that would show up first in an alphabetical list (like `AAD` or `.Koerber`), because of the way snippets work in SSMS.
-3. Click `Import`, and select the downloaded `.snippet` file. 
-4. Select the folder you created and click `Finish` (this may take a few moments) and then `OK`.
-5. To open snippets, use the shortcut `Ctrl+K,  Ctrl+X`. Select (by pressing `Enter`) the folder you added (it should be first in the list so you don't have to search for it!), type `sto`, then hit `Enter`. The `stopkd` `FROM` snippet expansion should work correctly.
+2. Click `Add` and add a folder where you're going to put the downloaded `.snippet` file. I would name it something that would show up first in an alphabetical list (like `AAD` or `.Koerber`) because of the way snippets work in SSMS.
+3. Click `Import` and select the downloaded `.snippet` file. 
+4. Select the folder you created and click `Finish` (this may take a few moments) and then hit `OK`.
+5. To open the available snippets, use the shortcut `Ctrl+K,  Ctrl+X`. Select (by pressing `Enter`) the folder you added (you want it to be first in the list so that you don't have to search for it!), type `stopkd`, then hit `Enter`. The `stopkd` `JOIN` snippet expansion should work correctly.
 
 ## Background
 
@@ -41,7 +41,7 @@ SSMS and Azure Data Studio (also VSCode) support custom snippets.
 
 ### FROM Snippet
 
-Each table in the schema can expand a table alias to a `FROM` line with the table name and `WITH (NOLOCK)`. So `sto` expands to:
+Each table in the schema can expand a table alias snippet to a `FROM` line with the table name and `WITH (NOLOCK)`. So `sto` expands to:
 ```sql
 FROM t_stored_item sto WITH (NOLOCK)
 ```
@@ -71,7 +71,7 @@ JOIN t_stored_item sto WITH (NOLOCK)
 	ON loc.wh_id = sto.wh_id
 	AND loc.location_id = sto.location_id
 ```
-Because *a* shortest path from `zon` to `sto` is through `znl`, and `loc`.
+Because *a* shortest path from `zon` to `sto` is through `znl` and `loc`.
 
 You have to be careful, though, because there can be multiple shortest paths from a source to a set of destinations. For example, say you wanted to find all the `sto` on each employee's fork. So you could try `stoemp`, but you'd get:
 ```sql
@@ -92,7 +92,7 @@ Because now a shortest set of paths from `sto` to `loc` and `emp` is through tho
 
 ### Others
 
-The snippet `btran` begins a transaction *that is potentially inside another transaction with proper error handling*. A lot of base code does not do this properly.
+The snippet `btran` begins a transaction *that is potentially inside another transaction and with proper error handling*. A lot of base code does not do this properly.
 
 The snippet `ifelse` expands to `IF`/`ELSE` blocks.
 
