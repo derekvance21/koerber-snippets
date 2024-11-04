@@ -25,9 +25,9 @@ Go to the [release page](https://github.com/derekvance21/koerber-snippets/releas
 
 ## Background
 
-Here is a graph of a subset of the AAD schema that these snippets use. Each node is a table, and each relationship between two tables is an edge. Each node has a unique default alias. Each edge has a join attribute describing how one table joins to the other table's primary key.
+Here is a graph of a subset of the schema that these snippets use. Each node is a table, and each relationship between two tables is an edge. Each node has a unique default alias. Each edge has a join attribute describing how one table joins to the other table's primary key. Note that tables in other databases than AAD like KoerberOneCore and REPOSITORY are included, too.
 
-![AAD Schema as a graph](schema.png)
+![Schema as a graph](schema.png)
 
 Using some graph algorithms, the shortest paths from a source node to a set of destination nodes can be found.
 
