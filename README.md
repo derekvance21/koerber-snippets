@@ -1,28 +1,24 @@
 # Koerber Snippets
 
-This is a project to generate useful SQL snippets for Koerber development, specifically for AAD database.
+This is a project to generate useful SQL snippets for Koerber development.
 
 ![Snippets Demo](demo.gif)
 
 ## Install
 
-Go to the [release page](https://github.com/derekvance21/koerber-snippets/releases) and download the appropriate file for your IDE (SSMS or VSCode/Azure Data Studio).
+Go to the [release page](https://github.com/derekvance21/koerber-snippets/releases) and download the appropriate file for your IDE. The `*.snippet` file is for SSMS and the `sql.json` file is for VSCode/Azure Data Studio.
 
-### VSCode/Azure Data Studio
+### [VSCode](https://code.visualstudio.com/docs/editor/userdefinedsnippets)/[Azure Data Studio](https://learn.microsoft.com/en-us/azure-data-studio/code-snippets#creating-sql-code-snippets)
 
-[docs](https://code.visualstudio.com/docs/editor/userdefinedsnippets#_create-your-own-snippets)
-
-1. Open the Command Palette with `Ctrl+Shift+P` and search for and select `Snippets: Configure Snippets`, then `MS SQL`
+1. Open the Command Palette with `Ctrl+Shift+P` and search for and select `Snippets: Configure Snippets`, then `SQL`
 2. Copy the downloaded `sql.json` file and paste it into this opened buffer and save.
 3. Alternatively, move the downloaded `sql.json` file to `%APPDATA%\Code\User\snippets` for VSCode or `%APPDATA%\azuredatastudio\User\snippets` for Azure Data Studio.
 4. Open a new buffer, change the language to SQL, type `stopkd`, then hit `Enter` to test snippet expansion.
 
-### SSMS
-
-[docs](https://learn.microsoft.com/en-us/sql/ssms/scripting/add-transact-sql-snippets?view=sql-server-ver16)
+### [SSMS](https://learn.microsoft.com/en-us/sql/ssms/scripting/add-transact-sql-snippets?view=sql-server-ver16)
 
 1. Open the Code Snippets Manager with `Ctrl+K, Ctrl+B` or clicking `Tools > Code Snippets Manager`.
-2. Click `Add` and add a folder where you're going to put the downloaded `.snippet` file. I would name it something that would show up first in an alphabetical list (like `AAD` or `.Koerber`) because of the way snippets work in SSMS.
+2. Click `Add` and add a folder at `%USERPROFILE%\Documents\SQL Server Management Studio\Code Snippets\SQL` where you're going to put the downloaded `.snippet` file. I would name it something that would show up first in an alphabetical list (like `AAD` or `.Koerber`) because of the way snippets work in SSMS.
 3. Click `Import` and select the downloaded `.snippet` file. 
 4. Select the folder you created and click `Finish` (this may take a few moments) and then hit `OK`.
 5. To open the available snippets, use the shortcut `Ctrl+K,  Ctrl+X`. Select (by pressing `Enter`) the folder you added (you want it to be first in the list so that you don't have to search for it!), type `stopkd`, then hit `Enter`. The `stopkd` `JOIN` snippet expansion should work correctly.
@@ -104,3 +100,4 @@ The following generates two snippet files in the `out/` folder: `sql.json` (for 
 ```sh
 mkdir -p out; clj -M -m snippets.core
 ```
+

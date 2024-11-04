@@ -6,46 +6,13 @@
    [ubergraph.alg :as alg]))
 
 
-;; KoerberOneCore tables...
+;; subgraph of g with only nodes
+#_(defn induced
+  [g nodes]
+  ())
 
-(def repository-nodes
-  [[:mnu {:table "t_menu"}]
-   [:pob {:db "REPOSITORY" :table "t_app_process_object"}]
-   [:pobd {:db "REPOSITORY" :table "t_app_process_object_detail"}]
-   [:clc {:db "REPOSITORY" :table "t_act_calculate"}]
-   [:clcd {:db "REPOSITORY" :table "t_act_calculate_detail"}]
-   [:db {:db "REPOSITORY" :table "t_act_database"}]
-   [:dbd {:db "REPOSITORY" :table "t_act_database_detail"}]
-   [:rsc {:db "REPOSITORY" :table "t_resource"}]
-   [:rscd {:db "REPOSITORY" :table "t_resource_detail"}]
-   [:app {:db "REPOSITORY" :table "t_application_development"}]])
 
-(def repository-edges
-  [;; pob
-   [:pob :app {:application_id :application_id}]
-   ;; pobd
-   [:pobd :pob {:id :id :version :version}]
-   #_[:pobd :pob {:action_type "1"
-                  :action_id :id}]
-   [:pobd :clc {:action_type "3"
-                :action_id :id}]
-   [:pobd :db {:action_type "5"
-               :action_id :id}]
-   ;; clc
-   [:clc :app {:application_id :application_id}]
-   ;; clcd
-   [:clcd :clc {:id :id :version :version}]
-   [:clcd :rsc {[:operand1_id :operand2_id] :id}]
-   ;; db
-   [:db :app {:application_id :application_id}]
-   ;; dbd
-   [:dbd :db {:id :id :version :version}]
-   ;; rsc
-   [:rsc :app {:application_id :application_id}]
-   ;; rscd
-   [:rscd :rsc {:id :id :version :version}]
-   ;; mnu
-   [:mnu :pob {:process :name}]])
+
 
 (def aad-nodes
   [[:sto {:table "t_stored_item"}]
@@ -80,8 +47,8 @@
    [:ppm {:table "t_pick_put_master"}]
    [:ppr {:table "t_pick_put_rules"}]
    [:ppd {:table "t_pick_put_detail"}]
-   [:eil {:table "t_emp_input_log"}] ;; FK to rules and master
-   ])
+   [:eil {:table "t_emp_input_log"}]
+   [:mnu {:table "t_menu"}]])
 
 ;; lkp should be a directed edge
 (def aad-edges
@@ -249,10 +216,87 @@
    [:trl :trn {:tran_type :tran_type} {:weight 1.1}]
    [:trl :orm {:wh_id :wh_id
                :outbound_order_number :order_number} {:weight 1.1}]
+   [:trl :pkd {:pick_id :pick_id} {:weight 1.1}]
    ;; eil
    [:eil :emp {:id :id}]
    [:eil :loc {:wh_id :wh_id
                :fork_id :location_id}]])
+
+
+(defn assoc-db
+  [db nodes]
+  (mapv
+   (fn [[n attrs]]
+     [n (assoc attrs :db db)])
+   nodes))
+
+
+(def adv-nodes
+  (assoc-db
+   "ADV"
+   [[:app {:table "t_application"}]
+    [:lgm {:table "t_log_message"}]]))
+
+
+;; KoerberOneCore tables...
+(def koerber-one-core-nodes
+  (assoc-db
+   "KoerberOneCore"
+   [[:usr {:table "[User]"}]
+    [:uic {:table "UserIdentityClaim"}]
+    [:icl {:table "IdentityClaim"}]
+    [:rol {:table "[Role]"}]
+    [:url {:table "UserRoles"}]
+    [:ric {:table "RoleIdentityClaim"}]]))
+
+(def koerber-one-core-edges
+  [[:uic :usr {:UserId :Id}]
+   [:uic :icl {:IdentityClaimId :Id}]
+   [:url :usr {:UserId :Id}]
+   [:url :rol {:RoleId :Id}]
+   [:ric :rol {:RoleId :Id}]
+   [:ric :icl {:IdentityClaimId :Id}]
+   [:usr :emp {:LogOnName :id} {:collate? true}]])
+
+(def repository-nodes
+  (assoc-db
+   "REPOSITORY"
+   [[:pob {:table "t_app_process_object"}]
+    [:pobd {:table "t_app_process_object_detail"}]
+    [:clc {:table "t_act_calculate"}]
+    [:clcd {:table "t_act_calculate_detail"}]
+    [:db {:table "t_act_database"}]
+    [:dbd {:table "t_act_database_detail"}]
+    [:rsc {:table "t_resource"}]
+    [:rscd {:table "t_resource_detail"}]
+    [:apd {:table "t_application_development"}]]))
+
+(def repository-edges
+  [;; pob
+   [:pob :apd {:application_id :application_id}]
+   ;; pobd
+   [:pobd :pob {:id :id :version :version}]
+   #_[:pobd :pob {:action_type "1"
+                  :action_id :id}]
+   [:pobd :clc {:action_type "3"
+                :action_id :id}]
+   [:pobd :db {:action_type "5"
+               :action_id :id}]
+   ;; clc
+   [:clc :apd {:application_id :application_id}]
+   ;; clcd
+   [:clcd :clc {:id :id :version :version}]
+   [:clcd :rsc {[:operand1_id :operand2_id] :id}]
+   ;; db
+   [:db :apd {:application_id :application_id}]
+   ;; dbd
+   [:dbd :db {:id :id :version :version}]
+   ;; rsc
+   [:rsc :apd {:application_id :application_id}]
+   ;; rscd
+   [:rscd :rsc {:id :id :version :version}]
+   ;; mnu
+   [:mnu :pob {:process :name}]])
 
 
 (defn edge->init
@@ -260,21 +304,23 @@
   [src dest (merge {:weight 1} attrs {:join join})])
 
 
-;; TODO - rename to schema or aad-schema or something
-(def aad-schema
-  (let [inits (into aad-nodes (map edge->init) aad-edges)]
+(def schema
+  (let [nodes (into [] cat [adv-nodes koerber-one-core-nodes repository-nodes aad-nodes])
+        edges (into [] (comp cat (map edge->init)) [koerber-one-core-edges repository-edges aad-edges])
+        inits (into nodes edges)]
     (apply uber/graph inits)))
 
 
 (defn edge-description
   [g e]
-  (let [[src dest {:keys [join]}] (uber/edge-with-attrs g e)
+  (let [[src dest {:keys [join collate?]}] (uber/edge-with-attrs g e)
         mirror? (uber/mirror-edge? e)]
     [src
      (uber/node-with-attrs g dest)
      (if mirror?
        (set/map-invert join)
-       join)]))
+       join)
+     collate?]))
 
 
 (defn shortest-paths-to-destinations
@@ -305,7 +351,8 @@
      ;; all the paths to each dest in dests need to be under the max-jumps
      ;; TODO maybe also the sum of the path costs needs to be under max-jumps?
      ;; but really that's something I need to communicate with the shortest-path calculation...
-     (when (every? #(<= (:cost %) max-jumps) paths)
+     (when (every? #(when-let [cost (:cost %)]
+                      (<= cost max-jumps)) paths)
        paths))))
 
 
@@ -323,49 +370,52 @@
 
 
 (comment
-  (shortest-paths-to-destinations aad-schema :sto [:loc :orm])
-  (edges-to-destinations aad-schema :sto [:loc :orm])
+  (shortest-paths-to-destinations schema :sto [:loc :orm])
+  (shortest-paths-to-destinations schema :uic [:usr])
+
+  (edges-to-destinations schema :sto [:loc :orm])
+  (edges-to-destinations schema :sto [:loc :orm])
   
-  (edges-to-destinations aad-schema :hum [:pkd :wkq])
-  (shortest-paths-to-destinations aad-schema :hum [:pkd :wkq])
-  (shortest-paths-to-destinations aad-schema :zon [:loc :alo])
-  (shortest-paths-to-destinations aad-schema :hld [:sto :car])
-  (shortest-paths-to-destinations aad-schema :hld [:sto :itm])
-  (edges-to-destinations aad-schema :zon [:alo])
-  (edges-to-destinations aad-schema :zon [:loc :alo :sto :pkd :itm :ppm])
-  (edges-to-destinations aad-schema :zon [:loc :alo :ppm])
-  (edges-to-destinations aad-schema :ppm [:hld])
-  (edges-to-destinations aad-schema :sto [:emp])
-  (edges-to-destinations aad-schema :sto [:loc :emp])
-  (edges-to-destinations aad-schema :pkd [:emp :loc :ppm])
-  (edges-to-destinations aad-schema :pkd [:loc :ord :orm])
-  (edges-to-destinations aad-schema :sto [:orm :loc :emp])
-  (edges-to-destinations aad-schema :sto [:pkd :hum])
-  (edges-to-destinations aad-schema :alo [:orm :emp])
-  (edges-to-destinations aad-schema :alo [:orm :emp])
+  (edges-to-destinations schema :hum [:pkd :wkq])
+  (shortest-paths-to-destinations schema :hum [:pkd :wkq])
+  (shortest-paths-to-destinations schema :zon [:loc :alo])
+  (shortest-paths-to-destinations schema :hld [:sto :car])
+  (shortest-paths-to-destinations schema :hld [:sto :itm])
+  (edges-to-destinations schema :zon [:alo])
+  (edges-to-destinations schema :zon [:loc :alo :sto :pkd :itm :ppm])
+  (edges-to-destinations schema :zon [:loc :alo :ppm])
+  (edges-to-destinations schema :ppm [:hld])
+  (edges-to-destinations schema :sto [:emp])
+  (edges-to-destinations schema :sto [:loc :emp])
+  (edges-to-destinations schema :pkd [:emp :loc :ppm])
+  (edges-to-destinations schema :pkd [:loc :ord :orm])
+  (edges-to-destinations schema :sto [:orm :loc :emp])
+  (edges-to-destinations schema :sto [:pkd :hum])
+  (edges-to-destinations schema :alo [:orm :emp])
+  (edges-to-destinations schema :alo [:orm :emp])
 )
 
 
 (def schema-nodes
-  (uber/nodes aad-schema))
+  (uber/nodes schema))
 
 
 (def node-descriptions
   (sequence
-   (map #(uber/node-with-attrs aad-schema %))
-   (uber/nodes aad-schema)))
+   (map #(uber/node-with-attrs schema %))
+   (uber/nodes schema)))
 
 
 (defn viz-graph
   ([]
    (viz-graph [:dot :neato :fdp :sfdp :twopi :circo]))
   ([layouts]
-   (let [repository-nodes [] #_[:pob :pobd :clc :clcd :db :dbd :rsc :rscd :app]
-         g (apply uber/remove-nodes aad-schema repository-nodes)
+   (let [repository-nodes [] #_[:pob :pobd :clc :clcd :db :dbd :rsc :rscd :apd]
+         g (apply uber/remove-nodes schema repository-nodes)
          vg (reduce (fn [g node]
-                      (let [{:keys [_db table]} (uber/attrs g node)]
+                      (let [{:keys [db table]} (uber/attrs g node)]
                         (uber/add-attrs
-                         g node {:label (str "{" (name node) #_(when db (str "|" db)) "|" table "}")
+                         g node {:label (str "{" (name node) (when db (str "|" db)) "|" table "}")
                                  :shape :Mrecord})))
                     g (uber/nodes g))]
      (doseq [layout layouts]
@@ -377,6 +427,7 @@
 
 
 (comment
-  (viz-graph)
+  (viz-graph [:dot])
+
   )
 

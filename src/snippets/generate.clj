@@ -15,17 +15,21 @@
 
 
 (defn clause->str
-  [src dest [f1 f2]]
-  (let [f1-coll? (coll? f1)]
-    (str (if f1-coll?
-           (value->str dest f2)
-           (value->str src f1))
-         (if (some coll? [f1 f2])
-           " IN "
-           " = ")
-         (if f1-coll?
-           (value->str src f1)
-           (value->str dest f2)))))
+  ([src dest fs]
+   (clause->str src dest fs nil))
+  ([src dest [f1 f2] collate?]
+   (let [f1-coll? (coll? f1)]
+     (str (if f1-coll?
+            (value->str dest f2)
+            (value->str src f1))
+          (when collate?
+            (str " COLLATE DATABASE_DEFAULT"))
+          (if (some coll? [f1 f2])
+            " IN "
+            " = ")
+          (if f1-coll?
+            (value->str src f1)
+            (value->str dest f2))))))
 
 
 (comment
@@ -45,14 +49,16 @@
 
 
 (defn edge->body
-  [src [dest {:keys [db table]}] join-map]
-  (let [dest (if (= src dest)
-               (keyword (str (name dest) "2"))
-               dest)]
-    (concat [(str "JOIN " (table-source db table) " " (name dest) " WITH (NOLOCK)")]
-            (map str
-                 (cons "\tON " (repeat "\tAND "))
-                 (map #(clause->str src dest %) join-map)))))
+  ([src dest join-map]
+   (edge->body src dest join-map))
+  ([src [dest {:keys [db table]}] join-map collate?]
+   (let [dest (if (= src dest)
+                (keyword (str (name dest) "2"))
+                dest)]
+     (concat [(str "JOIN " (table-source db table) " " (name dest) " WITH (NOLOCK)")]
+             (map str
+                  (cons "\tON " (repeat "\tAND "))
+                  (map #(clause->str src dest % collate?) join-map))))))
 
 
 (comment

@@ -12,7 +12,7 @@
 
 (defn join-from-subset
   [[start & dests]]
-  (let [edges (g/edges-to-destinations g/aad-schema start dests)]
+  (let [edges (g/edges-to-destinations g/schema start dests)]
     (when-not (empty? edges)
       {:start start
        :dests dests
