@@ -26,10 +26,14 @@
 
 
 (def default-snippets
-  [(gen/->Snippet "dragon" "A dragon" d/dragon)
-   (gen/->Snippet "dragoncow" "A dragon and a cow" d/dragon-cow)
-   (gen/->Snippet "ifelse" "IF block and an ELSE block" d/if-else)
-   (gen/->Snippet "btran" "Begin a transaction safely" d/transaction)])
+  (into
+   []
+   (map (partial apply gen/->Snippet))
+   [["dragon" "A dragon" d/dragon]
+    ["dragoncow" "A dragon and a cow" d/dragon-cow]
+    ["ifelse" "IF block and an ELSE block" d/if-else]
+    ["sel" "A select top 1000 * statement" d/select-1000]
+    ["btran" "Begin a transaction safely" d/transaction]]))
 
 
 (def snippets
@@ -40,13 +44,6 @@
     (eduction (map gen/join-snippet) joins)
     default-snippets]))
 
-
-(comment
-  (get (into {} (map (juxt :prefix identity)) snippets)
-       "stohum")
-  (get (into {} (map (juxt :prefix identity)) snippets)
-       "stolocemp")
-  )
 
 (defn write-vscode-snippets
   [f]

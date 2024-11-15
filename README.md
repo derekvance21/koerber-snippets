@@ -104,6 +104,8 @@ Then there are two easter egg snippets, `dragon` and `dragoncow`.
 
 The following generates two snippet files in the `out/` folder: `sql.json` (for VSCode/Azure Data Studio) and `snippets.snippet` (for SSMS).
 ```sh
-mkdir -p out; clj -M -m snippets.core
+mkdir -p out;
+clj -M -m snippets.core;
+cp out/sql.json $WHOME/AppData/Roaming/Code/User/snippets/sql.json
 ```
 

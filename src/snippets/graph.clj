@@ -15,7 +15,10 @@
 
 
 (def aad-nodes
-  [[:sto {:table "t_stored_item"}]
+  [[:sch {:table "t_schema_history"}]
+   [:ctl {:table "t_control"}]
+   [:whs {:table "t_whse_control"}]
+   [:sto {:table "t_stored_item"}]
    [:loc {:table "t_location"}]
    [:hum {:table "t_hu_master"}]
    [:pkd {:table "t_pick_detail"}]
@@ -24,7 +27,7 @@
    [:ord {:table "t_order_detail"}]
    [:ldm {:table "t_load_master"}]
    [:wkq {:table "t_work_q"}]
-   [:wkt {:table "t_work_q_types"}]
+   [:wkt {:table "t_work_types"}]
    [:wqa {:table "t_work_q_assignment"}]
    [:itu {:table "t_item_uom"}]
    [:car {:table "t_carrier"}]
@@ -231,12 +234,6 @@
    nodes))
 
 
-(def adv-nodes
-  (assoc-db
-   "ADV"
-   [[:app {:table "t_application"}]
-    [:lgm {:table "t_log_message"}]]))
-
 
 ;; KoerberOneCore tables...
 (def koerber-one-core-nodes
@@ -276,11 +273,11 @@
    [:pob :apd {:application_id :application_id}]
    ;; pobd
    [:pobd :pob {:id :id :version :version}]
-   #_[:pobd :pob {:action_type "1"
+   #_[:pobd :pob {;; :action_type "1"
                   :action_id :id}]
-   [:pobd :clc {:action_type "3"
+   [:pobd :clc {;; :action_type "3"
                 :action_id :id}]
-   [:pobd :db {:action_type "5"
+   [:pobd :db {;; :action_type "5"
                :action_id :id}]
    ;; clc
    [:clc :apd {:application_id :application_id}]
@@ -299,14 +296,33 @@
    [:mnu :pob {:process :name}]])
 
 
+(def adv-nodes
+  (assoc-db
+   "ADV"
+   [[:app {:table "t_application"}]
+    [:dev {:table "t_device"}]
+    [:dvt {:table "t_device_type"}]
+    [:sol {:table "t_solution"}]
+    [:srv {:table "t_server"}]
+    [:lgm {:table "t_log_message"}]]))
+
+(def adv-edges
+  [[:dev :pob {:process_object_id :id}]
+   [:dev :dvt {:device_type_id :device_type_id}]
+   [:dev :sol {:solution_id :solution_id}]
+   [:sol :apd {:application_id :application_id}]
+   [:sol :srv {:server_id :server_id}]
+   [:lgm :emp {:user_id :id}]
+   ])
+
 (defn edge->init
   [[src dest join attrs]]
   [src dest (merge {:weight 1} attrs {:join join})])
 
 
 (def schema
-  (let [nodes (into [] cat [adv-nodes koerber-one-core-nodes repository-nodes aad-nodes])
-        edges (into [] (comp cat (map edge->init)) [koerber-one-core-edges repository-edges aad-edges])
+  (let [nodes (into [] cat [aad-nodes koerber-one-core-nodes repository-nodes adv-nodes])
+        edges (into [] (comp cat (map edge->init)) [aad-edges koerber-one-core-edges repository-edges adv-edges])
         inits (into nodes edges)]
     (apply uber/graph inits)))
 
