@@ -1,5 +1,6 @@
 (ns snippets.graph
   (:require
+   [clojure.math.combinatorics :as combo]
    [ubergraph.core :as uber]
    [clojure.set :as set]
    [snippets.defaults :as d]
@@ -7,11 +8,13 @@
 
 
 ;; subgraph of g with only nodes
-#_(defn induced
+(defn induced
   [g nodes]
-  ())
-
-
+  (uber/remove-nodes*
+   g
+   (set/difference
+    (set (uber/nodes g))
+    (set nodes))))
 
 
 (def aad-nodes
@@ -53,6 +56,7 @@
    [:eil {:table "t_emp_input_log"}]
    [:mnu {:table "t_menu"}]])
 
+
 ;; lkp should be a directed edge
 (def aad-edges
   [;; ppm
@@ -76,13 +80,13 @@
    [:hld :rea {:reason_id :reason_id
                :reason_type :type}]
    [:emp :pka {:wh_id :wh_id
-               :pick_area :pick_area}]
+               :pick_area :pick_area}] ;; TODO - this one might need to be removed. Not emp.pick_area is used
    ;; loc
    [:loc :emp {:c1 :id}]
    [:loc :lkp {"t_location" :source
                "1033" :locale_id
                :type :text
-               "TYPE" :lookup_type}]
+               "TYPE" :lookup_type} {:directed? true}]
    [:loc :pka {:wh_id :wh_id
                :pick_area :pick_area}]
    ;; hum
@@ -96,7 +100,7 @@
    [:hum :lkp {"t_hu_master" :source
                "1033" :locale_id
                :type :text
-               "TYPE" :lookup_type}]
+               "TYPE" :lookup_type} {:directed? true}]
    ;; adding a cycle! Ah!
    #_[:hum :hum {:wh_id :wh_id
                  :parent_hu_id :hu_id}]
@@ -122,7 +126,7 @@
    [:pkd :lkp {"t_pick_detail" :source
                "1033" :locale_id
                :type :text
-               "TYPE" :lookup_type}]
+               "TYPE" :lookup_type} {:directed? true}]
    [:pkd :pka {:wh_id :wh_id
                :pick_area :pick_area}]
    ;; itm
@@ -135,7 +139,7 @@
    [:orm :car {:carrier_id :carrier_id}] ;; some use {:wh_id :wh_id :carrier :carrier_code}
    [:orm :ldm {:wh_id :wh_id
                :load_id :load_id}]
-   [:orm :lkp {:type_id :lookup_id}]
+   [:orm :lkp {:type_id :lookup_id} {:directed? true}]
    ;; ord
    [:ord :orm {:order_id :order_id}]
    [:ord :itm {:wh_id :wh_id
@@ -177,7 +181,7 @@
    [:alo :ppr {:pick_rule :rule
                "PICK" :type}]
    ;; pom
-   [:pom :lkp {:type_id :lookup_id}]
+   [:pom :lkp {:type_id :lookup_id} {:directed? true}]
    ;; pod
    [:pod :pom {:wh_id :wh_id
                :po_number :po_number}]
@@ -234,7 +238,6 @@
    nodes))
 
 
-
 ;; KoerberOneCore tables...
 (def koerber-one-core-nodes
   (assoc-db
@@ -246,6 +249,7 @@
     [:url {:table "UserRoles"}]
     [:ric {:table "RoleIdentityClaim"}]]))
 
+
 (def koerber-one-core-edges
   [[:uic :usr {:UserId :Id}]
    [:uic :icl {:IdentityClaimId :Id}]
@@ -254,6 +258,7 @@
    [:ric :rol {:RoleId :Id}]
    [:ric :icl {:IdentityClaimId :Id}]
    [:usr :emp {:LogOnName :id} {:collate? true}]])
+
 
 (def repository-nodes
   (assoc-db
@@ -267,6 +272,7 @@
     [:rsc {:table "t_resource"}]
     [:rscd {:table "t_resource_detail"}]
     [:apd {:table "t_application_development"}]]))
+
 
 (def repository-edges
   [;; pob
@@ -306,37 +312,84 @@
     [:srv {:table "t_server"}]
     [:lgm {:table "t_log_message"}]]))
 
+
 (def adv-edges
   [[:dev :pob {:process_object_id :id}]
    [:dev :dvt {:device_type_id :device_type_id}]
    [:dev :sol {:solution_id :solution_id}]
    [:sol :apd {:application_id :application_id}]
    [:sol :srv {:server_id :server_id}]
-   [:lgm :emp {:user_id :id}]
-   ])
+   [:lgm :emp {:user_id :id}]])
 
-(defn edge->init
+
+(defn edge->inits
   [[src dest join attrs]]
-  [src dest (merge {:weight 1} attrs {:join join})])
+  (let [merged-attrs (merge {:weight 1} attrs {:join join})]
+    (if (:directed? attrs)
+      [[src dest merged-attrs]]
+      [[src dest merged-attrs]
+       [dest src (assoc merged-attrs
+                        :join (set/map-invert join)
+                        :reverse? true)]])))
 
 
+;; do the direction yourself
+;; for every non-directed? edge, create two directed edges, and do the join map-invert yourself!
 (def schema
   (let [nodes (into [] cat [aad-nodes koerber-one-core-nodes repository-nodes adv-nodes])
-        edges (into [] (comp cat (map edge->init)) [aad-edges koerber-one-core-edges repository-edges adv-edges])
-        inits (into nodes edges)]
-    (apply uber/graph inits)))
+        edges (into [] (comp
+                        cat
+                        (mapcat edge->inits))
+                    [aad-edges koerber-one-core-edges repository-edges adv-edges])]
+    (-> (uber/digraph)
+        (uber/add-nodes-with-attrs* nodes)
+        (uber/add-directed-edges* edges))))
 
 
 (defn edge-description
   [g e]
-  (let [[src dest {:keys [join collate?]}] (uber/edge-with-attrs g e)
-        mirror? (uber/mirror-edge? e)]
-    [src
-     (uber/node-with-attrs g dest)
-     (if mirror?
-       (set/map-invert join)
-       join)
-     collate?]))
+  (let [[src dest {:keys [join collate?]}] (uber/edge-with-attrs g e)]
+    [src (uber/node-with-attrs g dest) join collate?]))
+
+
+(defn derived-edge
+  [g src thru dest]
+  (let [src-join (uber/attr g src thru :join)
+        dest-join (uber/attr g dest thru :join)]
+    (when (= (vals src-join) (vals dest-join))
+      (let [derived-join (zipmap (keys src-join) (keys dest-join))]
+        (when (every? #(some (some-fn keyword? coll?) %) derived-join)
+          [src dest {:join derived-join
+                     :through thru}])))))
+
+
+(comment
+  (derived-edge schema :pkd :lkp :hum)
+  (derived-edge schema :alo :loc :sto)
+  (derived-edge schema :pkd :wkq :wqa)
+  (derived-edge schema :pkd :emp :wqa)
+  )
+
+
+(defn derived-edges
+  [g thru]
+  (let [in-nodes (mapv uber/src (uber/in-edges g thru))]
+    (keep
+     (fn [[src dest]]
+       (derived-edge g src thru dest))
+     (combo/permuted-combinations in-nodes 2))))
+
+
+(comment
+  (derived-edges schema :itm)
+
+  (group-by (juxt first second)
+            (eduction
+             (map (partial derived-edges schema))
+             (remove empty?)
+             cat
+             (uber/nodes schema)))
+  )
 
 
 (defn shortest-paths-to-destinations
@@ -391,8 +444,10 @@
 
   (edges-to-destinations schema :sto [:loc :orm])
   (edges-to-destinations schema :sto [:loc :orm])
-  
+
   (edges-to-destinations schema :hum [:pkd :wkq])
+  (edges-to-destinations schema :alo [:wkq]) 
+
   (shortest-paths-to-destinations schema :hum [:pkd :wkq])
   (shortest-paths-to-destinations schema :zon [:loc :alo])
   (shortest-paths-to-destinations schema :hld [:sto :car])
@@ -409,7 +464,7 @@
   (edges-to-destinations schema :sto [:pkd :hum])
   (edges-to-destinations schema :alo [:orm :emp])
   (edges-to-destinations schema :alo [:orm :emp])
-)
+  )
 
 
 (def schema-nodes

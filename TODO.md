@@ -1,3 +1,4 @@
+- [X] remove outbound edges from lkp
 - [X] for each node, just have one possible path. So pkd would have pkdsto, pkdhum, pkdorm, etc.
     And if you wanted sto -> hum -> orm instead of sto -> pkd -> orm, for example.
     You'd have to do stohum, then humorm, instead of just stoorm, which would do the latter.
@@ -18,3 +19,7 @@ JOIN t_pick_detail pkd WITH (NOLOCK)
     - like if you go to lkp, you're done. You can't come out of there are again.
     - b/c a to lkp and lkp to b will never both join!
     - I think lkp is probably the exception in this b/c of the constant strings involved in the join
+- [ ] "derived" edges
+    - if a node has two in-edges that share the same join target on the node, then you can create a derived edge (just for shortest-path calculation) that skips the given node.
+    - for example, loc has in-edges from alo and sto. Both have the same  join map's values (:wh_id and :location_id). So you can create a new edge from alo to sto with `{:wh_id :wh_id :putaway_location :location_id}`. But it's undirected. And it would also be an issue to break ties, there. Because this same concept applies with pkd, so there could be a join from alo to sto that goes through (skips) pkd. So with my current method it wouldn't quite necessarily work.
+    - derived edges should have a higher weight. So `pkdwqa` would use the derived edge, but `pkdwkqwqa` would not use the derived edge, b/c that'd have a higher path cost than going pkd to wkq, wkq to wqa.
