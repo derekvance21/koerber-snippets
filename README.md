@@ -88,6 +88,12 @@ Because now a shortest set of paths from `sto` to `loc` and `emp` is through tho
 
 ### Others
 
+The snippet `sel` expands to:
+```sql
+SELECT TOP 1000
+	*
+```
+
 The snippet `btran` begins a transaction *that is potentially inside another transaction and with proper error handling*. A lot of base code does not do this properly.
 
 The snippet `ifelse` expands to `IF`/`ELSE` blocks.
