@@ -1,4 +1,8 @@
+- [ ] SEMI JOIN snippets - expands into EXISTS subquery. That's cool!
+- [ ] `t_whse` and `t_whse_control` - maybe not as join snippets, but as node snippets
+- [ ] think about `lgmpob`. That's going to be a `lgm.call_stack LIKE '%' + pob.name + '%'` type of join. But you don't even really want to join like that - `pob` table doesn't give you anything. This is where the where snippets would come in. Then you could do `wlgmpob` to get the above query, with `$1` instead of `pob.name`. And this is also something that you might want the derived edges for. And that would be a way to include that feature.
 - [X] remove outbound edges from lkp
+- [ ] a lot of tables have fields in weird orders. So usually you're manually writing out the fields you want to select. And that's annoying. I'm thinking about `trl` probably the most. So maybe an `strl` snippet to select the important fields off of `trl`, like `source/destination_location/hu_id`, for starters.
 - [X] for each node, just have one possible path. So pkd would have pkdsto, pkdhum, pkdorm, etc.
     And if you wanted sto -> hum -> orm instead of sto -> pkd -> orm, for example.
     You'd have to do stohum, then humorm, instead of just stoorm, which would do the latter.

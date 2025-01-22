@@ -115,4 +115,6 @@
     {:prefix alias
      :description (str "Table " table " with alias: " alias)
      :body [(str "FROM " (table-source db table) " " alias " WITH (NOLOCK)")
-            "$0"]}))
+            "$0"
+            ;; for t_tran_log, add in an automatic ORDER BY trl.tran_log_id DESC
+            ]}))

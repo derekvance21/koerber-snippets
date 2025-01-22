@@ -112,7 +112,7 @@
    [:pkd :itm {:wh_id :wh_id
                :item_number :item_number}]
    [:pkd :loc {:wh_id :wh_id
-               :pick_location :location_id}]
+               :staging_location :location_id}]
    [:pkd :ord {:wh_id :wh_id
                :order_number :order_number
                :line_number :line_number}]
@@ -224,6 +224,7 @@
    [:trl :orm {:wh_id :wh_id
                :outbound_order_number :order_number} {:weight 1.1}]
    [:trl :pkd {:pick_id :pick_id} {:weight 1.1}]
+   [:trl :emp {:employee_id :id} {:weight 1.1}]
    ;; eil
    [:eil :emp {:id :id}]
    [:eil :loc {:wh_id :wh_id
