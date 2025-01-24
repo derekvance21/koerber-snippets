@@ -82,7 +82,6 @@
    [:emp :pka {:wh_id :wh_id
                :pick_area :pick_area}] ;; TODO - this one might need to be removed. Not emp.pick_area is used
    ;; loc
-   [:loc :emp {:c1 :id}]
    [:loc :lkp {"t_location" :source
                "1033" :locale_id
                :type :text
@@ -228,7 +227,9 @@
    ;; eil
    [:eil :emp {:id :id}]
    [:eil :loc {:wh_id :wh_id
-               :fork_id :location_id}]])
+               :fork_id :location_id}]
+   ;; emp
+   [:emp :loc {:id :c1}]])
 
 
 (defn assoc-db
@@ -470,6 +471,13 @@
 
 (def schema-nodes
   (uber/nodes schema))
+
+
+(def semi-join-edges
+  (eduction
+   (filter #(uber/attr schema % :reverse?))
+   (map #(edge-description schema %))
+   (uber/edges schema)))
 
 
 (def node-descriptions

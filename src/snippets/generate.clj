@@ -60,6 +60,20 @@
                   (cons "\tON " (repeat "\tAND "))
                   (map #(clause->str src dest % collate?) join-map))))))
 
+(defn edge->semi-join-body
+  [src [dest {:keys [db table]}] join-map collate?]
+  (let [dest (if (= src dest)
+               (keyword (str (name dest) "2"))
+               dest)]
+    (concat ["EXISTS ("
+             "\tSELECT 1"
+             (str "\tFROM " (table-source db table) " " (name dest) " WITH (NOLOCK)")
+             "\tWHERE"]
+            (map str
+                 (cons "\t\t" (repeat "\t\tAND "))
+                 (map #(clause->str src dest % collate?) join-map))
+            [")"
+             "$0"])))
 
 (comment
   (edge->body
@@ -79,6 +93,12 @@
     "1033" :locale_id
     :type :text
     "TYPE" :lookup_type})
+  (edge->semi-join-body
+   :loc
+   [:sto {:table "t_stored_item"}]
+   {:wh_id :wh_id
+    :location_id :location_id}
+   false)
   )
 
 
@@ -106,6 +126,14 @@
   (let [prefix (join-prefix start dests)
         description (edges->description start edges)
         body (conj (into [] (mapcat #(apply edge->body %)) edges) "$0")]
+    (->Snippet prefix description body)))
+
+
+(defn semi-join-snippet
+  [[start [dest dest-attrs] edge collate?]]
+  (let [prefix (str (name start) (name dest) "sj")
+        description (str "Semi join an existing " (name start) " table to " (name dest))
+        body (edge->semi-join-body start [dest dest-attrs] edge collate?)]
     (->Snippet prefix description body)))
 
 

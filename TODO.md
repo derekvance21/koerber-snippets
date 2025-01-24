@@ -1,4 +1,4 @@
-- [ ] SEMI JOIN snippets - expands into EXISTS subquery. That's cool!
+- [X] SEMI JOIN snippets - expands into EXISTS subquery. That's cool!
 - [ ] `t_whse` and `t_whse_control` - maybe not as join snippets, but as node snippets
 - [ ] think about `lgmpob`. That's going to be a `lgm.call_stack LIKE '%' + pob.name + '%'` type of join. But you don't even really want to join like that - `pob` table doesn't give you anything. This is where the where snippets would come in. Then you could do `wlgmpob` to get the above query, with `$1` instead of `pob.name`. And this is also something that you might want the derived edges for. And that would be a way to include that feature.
 - [X] remove outbound edges from lkp
@@ -6,11 +6,6 @@
 - [X] for each node, just have one possible path. So pkd would have pkdsto, pkdhum, pkdorm, etc.
     And if you wanted sto -> hum -> orm instead of sto -> pkd -> orm, for example.
     You'd have to do stohum, then humorm, instead of just stoorm, which would do the latter.
-- [ ] TODO - probably should be snippet for generating the FROM, as well as the JOINs, in one snippet
-*stopkd ->
-FROM t_stored_item sto WITH (NOLOCK)
-JOIN t_pick_detail pkd WITH (NOLOCK)
-    ON sto.type = pkd.pick_id
 - [X] Make it a undirected graph and see what happens! :O
 - [X] multiple nodes per snippet
     - here was the motivating thing - breaking ties. I was thinking a common thing is finding sto on people's fork. So naturally I tried `stoemp`. But there were multiple shortest paths, and it happened to do `sto` to `pkd` to `emp` first. And that's not what I wanted - I wanted `sto` to `loc` to `emp`. So you don't necessarily have to input the entire path, but you still get snippet uniqueness.
