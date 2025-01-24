@@ -107,9 +107,43 @@ SELECT TOP 1000
 	*
 ```
 
-The snippet `btran` begins a transaction *that is potentially inside another transaction and with proper error handling*. A lot of base code does not do this properly.
+The snippet `btran` begins a transaction *that is potentially inside another transaction and with proper error handling*. A lot of base code does not do this properly:
+```sql
+DECLARE @trancount INT = @@TRANCOUNT,
+	@savepoint NVARCHAR(32) = '';
+BEGIN TRY
+	IF @trancount = 0
+		BEGIN TRANSACTION;
+	ELSE
+		SAVE TRANSACTION @savepoint;
 
-The snippet `ifelse` expands to `IF`/`ELSE` blocks.
+	;
+
+	IF @trancount = 0
+		COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+	DECLARE @xact_state INT = XACT_STATE();
+	IF @xact_state = -1
+		ROLLBACK TRANSACTION;
+	IF @xact_state = 1 AND @trancount = 0
+		ROLLBACK TRANSACTION;
+	IF @xact_state = 1 AND @trancount > 0
+		ROLLBACK TRANSACTION @savepoint;
+END CATCH
+```
+
+The snippet `ifelse` expands to `IF`/`ELSE` blocks:
+```sql
+IF condition
+BEGIN
+	PRINT '';
+END
+ELSE
+BEGIN
+	PRINT '';
+END
+```
 
 Then there are two easter egg snippets, `dragon` and `dragoncow`.
 
