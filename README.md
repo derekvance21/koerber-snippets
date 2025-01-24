@@ -86,6 +86,19 @@ JOIN t_employee emp WITH (NOLOCK)
 ```
 Because now a shortest set of paths from `sto` to `loc` and `emp` is through those two tables.
 
+### SEMI JOIN Snippet
+
+You can join a source table to another table that has a directed edge to the source table. Semi join snippets end with `sj`. So `locstosj` yields:
+```sql
+EXISTS (
+	SELECT 1
+	FROM t_stored_item sto WITH (NOLOCK)
+	WHERE
+		loc.wh_id = sto.wh_id
+		AND loc.location_id = sto.location_id
+)
+```
+
 ### Others
 
 The snippet `sel` expands to:
