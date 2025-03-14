@@ -54,6 +54,17 @@ this makes the graph build ordering important.
 IMPORTANT - it doesn't have to be just PK, though, it could be UNIQUE INDEX!
 ex: ord's PK is order_detail_id (but who uses that??), whereas its UNIQUE INDEX is (wh_id, order_number, line_number)
 
+stolocitmalo - what does this mean?
+Here's what it means - I'm joining sto to alo, but I want them to join through *both* itm and loc.
+So:
+```sql
+JOIN t_allocation alo WITH (NOLOCK)
+    ON sto.wh_id = alo.wh_id
+    AND sto.location_id = alo.pick_location
+    AND sto.item_number = alo.item_number
+```
+That is kind of useful, not incredibly so... You'd end up creating a **ton** of joins that you'll almost never use
+
 `sudo apt install graphviz`
 
 # Steiner Trees

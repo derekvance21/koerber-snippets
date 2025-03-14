@@ -19,11 +19,15 @@
 
 (def aad-nodes
   [[:sch {:table "t_schema_history"}]
+   [:pkl {:table "t_packlane"}]
+   [:pwm {:table "t_putwall_master"}]
    [:ctl {:table "t_control"}]
+   [:con {:table "t_container"}]
    [:whs {:table "t_whse_control"}]
    [:sto {:table "t_stored_item"}]
    [:loc {:table "t_location"}]
    [:hum {:table "t_hu_master"}]
+   [:phum {:table "t_hu_master"}]
    [:pkd {:table "t_pick_detail"}]
    [:itm {:table "t_item_master"}]
    [:orm {:table "t_order"}]
@@ -59,7 +63,14 @@
 
 ;; lkp should be a directed edge
 (def aad-edges
-  [;; ppm
+  [;; pwm
+   [:pwm :loc {:wh_id :wh_id
+               :location_id :location_id}]
+   [:pwm :pkc {:wh_id :wh_id
+               :container_id :container_id}]
+   [:pwm :pkl {:wh_id :wh_id
+               :packlane :packlane}]
+   ;; ppm
    ;; ppr
    ;; ppd
    [:ppd :ppr {:type :type
@@ -100,9 +111,18 @@
                "1033" :locale_id
                :type :text
                "TYPE" :lookup_type} {:directed? true}]
-   ;; adding a cycle! Ah!
-   #_[:hum :hum {:wh_id :wh_id
-                 :parent_hu_id :hu_id}]
+   [:hum :phum {:wh_id :wh_id
+                :parent_hu_id :hu_id}]
+   [:phum :loc {:wh_id :wh_id
+                :location_id :location_id}]
+   [:phum :orm {:wh_id :wh_id
+                :control_number :order_number}]
+   [:phum :ldm {:wh_id :wh_id
+                :load_id :load_id}]
+   [:phum :lkp {"t_hu_master" :source
+                "1033" :locale_id
+                :type :text
+                "TYPE" :lookup_type} {:directed? true}]
    ;; pkd
    [:pkd :orm {:wh_id :wh_id
                :order_number :order_number}]
@@ -202,6 +222,8 @@
    [:pkc :hum {:wh_id :wh_id
                :container_label :hu_id}]
    [:pkc :emp {:user_assigned :id}]
+   [:pkc :pkl {:wh_id :wh_id
+               :packlane :packlane}]
    ;; znl
    [:znl :loc {:wh_id :wh_id
                :location_id :location_id}]
@@ -324,10 +346,13 @@
    [:lgm :emp {:user_id :id}]])
 
 
+(def ^:dynamic *directed* true)
+
+
 (defn edge->inits
   [[src dest join attrs]]
   (let [merged-attrs (merge {:weight 1} attrs {:join join})]
-    (if (:directed? attrs)
+    (if (or (:directed? attrs) (not *directed*))
       [[src dest merged-attrs]]
       [[src dest merged-attrs]
        [dest src (assoc merged-attrs
@@ -335,9 +360,8 @@
                         :reverse? true)]])))
 
 
-;; do the direction yourself
-;; for every non-directed? edge, create two directed edges, and do the join map-invert yourself!
-(def schema
+(defn create-schema
+  []
   (let [nodes (into [] cat [aad-nodes koerber-one-core-nodes repository-nodes adv-nodes])
         edges (into [] (comp
                         cat
@@ -346,6 +370,12 @@
     (-> (uber/digraph)
         (uber/add-nodes-with-attrs* nodes)
         (uber/add-directed-edges* edges))))
+
+
+;; do the direction yourself
+;; for every non-directed? edge, create two directed edges, and do the join map-invert yourself!
+(def schema
+  (create-schema))
 
 
 (defn edge-description
@@ -369,8 +399,7 @@
   (derived-edge schema :pkd :lkp :hum)
   (derived-edge schema :alo :loc :sto)
   (derived-edge schema :pkd :wkq :wqa)
-  (derived-edge schema :pkd :emp :wqa)
-  )
+  (derived-edge schema :pkd :emp :wqa))
 
 
 (defn derived-edges
@@ -448,7 +477,7 @@
   (edges-to-destinations schema :sto [:loc :orm])
 
   (edges-to-destinations schema :hum [:pkd :wkq])
-  (edges-to-destinations schema :alo [:wkq]) 
+  (edges-to-destinations schema :alo [:wkq])
 
   (shortest-paths-to-destinations schema :hum [:pkd :wkq])
   (shortest-paths-to-destinations schema :zon [:loc :alo])
@@ -473,6 +502,10 @@
   (uber/nodes schema))
 
 
+(def schema-edges
+  (mapv (juxt uber/src uber/dest) (uber/edges schema)))
+
+
 (def semi-join-edges
   (eduction
    (filter #(uber/attr schema % :reverse?))
@@ -491,7 +524,10 @@
    (viz-graph [:dot :neato :fdp :sfdp :twopi :circo]))
   ([layouts]
    (let [repository-nodes [] #_[:pob :pobd :clc :clcd :db :dbd :rsc :rscd :apd]
-         g (apply uber/remove-nodes schema repository-nodes)
+         g (apply uber/remove-nodes
+                  (binding [*directed* false]
+                    (create-schema))
+                  repository-nodes)
          vg (reduce (fn [g node]
                       (let [{:keys [db table]} (uber/attrs g node)]
                         (uber/add-attrs
@@ -506,8 +542,12 @@
                 :format :png}})))))
 
 
-(comment
-  (viz-graph [:dot])
+(defn save-dot-graph
+  [& _]
+  (viz-graph [:dot]))
 
+
+(comment
+  (save-dot-graph)
   )
 

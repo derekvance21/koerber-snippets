@@ -1,14 +1,13 @@
 (ns snippets.core
   (:require
-   [snippets.combo :as c]
    [cheshire.core :as json]
    [clojure.java.io :as io]
-   [snippets.xml :as x]
    [snippets.defaults :as d]
+   [snippets.generate :as gen]
    [snippets.graph :as g]
-   [snippets.generate :as gen])
+   [snippets.xml :as x]
+   [ubergraph.core :as uber])
   (:gen-class))
-
 
 (defn join-from-subset
   [[start & dests]]
@@ -21,9 +20,11 @@
 
 (def joins
   (sequence
-   (comp (map join-from-subset) (remove empty?))
-   (c/permuted-subsets g/schema-nodes 2 d/max-join-length)))
-
+   (map (fn [[src dest :as edge]]
+          {:start src
+           :dests [dest]
+           :edges [(g/edge-description g/schema edge)]}))
+   g/schema-edges))
 
 (def default-snippets
   (into
@@ -33,7 +34,9 @@
     ["dragoncow" "A dragon and a cow" d/dragon-cow]
     ["ifelse" "IF block and an ELSE block" d/if-else]
     ["sel" "A select top 1000 * statement" d/select-1000]
-    ["btran" "Begin a transaction safely" d/transaction]]))
+    ["btran" "Begin a transaction safely" d/transaction]
+    ["btry" "Begin a try catch block" d/try-catch-tran]
+    ["crsr" "Begin a local cursor" d/cursor]]))
 
 
 (def snippets
@@ -70,6 +73,3 @@
 (comment
   (-main)
   )
-
-
-
