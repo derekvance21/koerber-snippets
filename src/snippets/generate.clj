@@ -138,11 +138,11 @@
 
 
 ;; TODO!
-(defn outer-apply-snippet
-  [{:keys [start [dest] edges]}]
-  (let [prefix (str (name start) (name dest) "aj")
-        description (str "OUTER APPLY an existing" (name start) " table to " (name dest))
-        body ""]))
+;; (defn outer-apply-snippet
+;;   [{:keys [start [dest] edges]}]
+;;   (let [prefix (str (name start) (name dest) "aj")
+;;         description (str "OUTER APPLY an existing" (name start) " table to " (name dest))
+;;         body ""]))
 
 
 (defn node-snippet
