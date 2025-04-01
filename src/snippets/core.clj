@@ -45,7 +45,8 @@
    cat
    [(eduction (map gen/node-snippet) g/node-descriptions)
     (eduction (map gen/join-snippet) joins)
-    (eduction (map gen/semi-join-snippet) g/semi-join-edges)
+    (eduction (map gen/semi-join-snippet) g/one-to-many-edges)
+    (eduction (map gen/apply-join-snippet) g/one-to-many-edges)
     default-snippets]))
 
 

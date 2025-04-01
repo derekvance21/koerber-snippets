@@ -506,7 +506,7 @@
   (mapv (juxt uber/src uber/dest) (uber/edges schema)))
 
 
-(def semi-join-edges
+(def one-to-many-edges
   (eduction
    (filter #(uber/attr schema % :reverse?))
    (map #(edge-description schema %))
