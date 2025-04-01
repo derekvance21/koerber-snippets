@@ -99,6 +99,24 @@ EXISTS (
 )
 ```
 
+### CROSS APPLY Snippet
+
+You can join a source table to another table that has a directed edge to the source table. Apply join snippets end with `aj`. So `locznlaj` yields:
+```sql
+CROSS APPLY (
+	SELECT
+		COUNT(*)
+	FROM t_zone_loca znl WITH (NOLOCK)
+	WHERE
+		loc.wh_id = znl.wh_id
+		AND loc.location_id = znl.location_id
+	GROUP BY
+		znl.wh_id,
+		znl.location_id
+) znl
+```
+With the `COUNT(*)` portion already selected.
+
 ### Others
 
 The snippet `sel` expands to:
